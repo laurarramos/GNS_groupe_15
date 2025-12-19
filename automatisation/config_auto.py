@@ -50,9 +50,35 @@ def config_RIP(node,router_name,as_routeur):
     #liens avec voisins :
     for link in intent["links"]:
         if router_name == link["routeur_a"]:
-            pass
-
-    #...
+            voisin = link["routeur_b"]
+            tn.write(b"interface {link[interface_a]}\r\n")
+            time.sleep(0.3)
+            tn.write(b"ipv6 enable\r\n")
+            time.sleep(0.3)
+            tn.write(b"ipv6 address {link[sous_res]}\r\n")
+            time.sleep(0.3)
+            if intent["routeurs"][voisin].get("as") == as_routeur:
+                tn.write(b"ipv6 rip {intent[AS][as_routeur].get('nom_process')} enable\r\n")
+                time.sleep(0.3)
+            tn.write(b"no shutdown\r\n")
+            time.sleep(0.3)
+            tn.write(b"exit\r\n")
+            time.sleep(0.3)
+        elif router_name == link["routeur_b"]:
+            voisin = link["routeur_a"]
+            tn.write(b"interface {link[interface_b]}\r\n")
+            time.sleep(0.3)
+            tn.write(b"ipv6 enable\r\n")
+            time.sleep(0.3)
+            tn.write(b"ipv6 address {link[sous_res]}\r\n")
+            time.sleep(0.3)
+            if intent["routeurs"][voisin].get("as") == as_routeur:
+                tn.write(b"ipv6 rip {intent[AS][as_routeur].get('nom_process')} enable\r\n")
+                time.sleep(0.3)
+            tn.write(b"no shutdown\r\n")
+            time.sleep(0.3)
+            tn.write(b"exit\r\n")
+            time.sleep(0.3)
     tn.write(b"end\r\n")
     tn.write(b"write\r\n")
     tn.close()
@@ -91,7 +117,7 @@ def config_OSPF(node,router_name,as_routeur):
     tn.write(b"exit\r\n")
     time.sleep(0.3)
     #liens avec voisins :
-    
+
     #...
     tn.write(b"end\r\n")
     tn.write(b"write\r\n")
