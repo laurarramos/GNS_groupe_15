@@ -3,12 +3,14 @@
     "X":{
         "igp":"RIP",
         "nom_process":"ASX",
-        "asnumber":"65001"
+        "asnumber":"65001",
+        "network":"2001:DB8:10::/48"
     },
     "Y":{
         "igp":"OSPF",
         "nom_process":"ASY",
-        "asnumber":"65002"
+        "asnumber":"65002",
+        "network":"2001:DB8:20::/48"
     }
   },
 

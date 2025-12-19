@@ -24,20 +24,21 @@ project.get_nodes()
 print([n.name for n in project.nodes])
 
 for router_name, router_info in intent.get("routeurs", {}).items():
-
     node = Node(project_id=project.project_id, name=router_name, connector=server)
     node.get()
-
     tn = telnetlib.Telnet(node.console_host, node.console)
     time.sleep(1)
-
     tn.write(b"\r\n")
     time.sleep(0.5)
-
+    
+    #Début des commandes
     tn.write(b"enable\r\n")
     time.sleep(0.3)
-
     tn.write(b"configure terminal\r\n")
+    time.sleep(0.3)
+    tn.write(b"ipv6 unicast-routing\r\n")
+    time.sleep(0.3)
+    tn.write(b"ipv6 unicast-routing\r\n")
     time.sleep(0.3)
 
     for link in intent["links"]:
