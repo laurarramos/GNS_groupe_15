@@ -1,0 +1,118 @@
+{
+  "AS": {
+    "X":{
+        "igp":"RIP",
+        "nom_process":"ASX",
+        "asnumber":"65001"
+    },
+    "Y":{
+        "igp":"OSPF",
+        "nom_process":"ASY",
+        "asnumber":"65002"
+    }
+  },
+
+  "routeurs": {
+    "X1":{
+        "as":"X",
+        "loopback":"2001:db8:10:ffff::1/128",
+        "routeurID":"1.1.1.1"
+    },
+    "X2":{
+        "as":"X",
+        "loopback":"2001:db8:10:ffff::2/128",
+        "routeurID":"2.2.2.2"
+    },
+    "X3":{
+        "as":"X",
+        "loopback":"2001:db8:10:ffff::3/128",
+        "routeurID":"3.3.3.3"
+    },
+    "X4":{
+        "as":"X",
+        "loopback":"2001:db8:10:ffff::4/128",
+        "routeurID":"4.4.4.4"
+    },
+    "X5":{
+        "as":"X",
+        "loopback":"2001:db8:10:ffff::5/128",
+        "routeurID":"5.5.5.5"
+    },
+    "X6":{
+        "as":"X",
+        "loopback":"2001:db8:10:ffff::6/128",
+        "routeurID":"6.6.6.6"
+    },
+    "X7":{
+        "as":"X",
+        "loopback":"2001:db8:10:ffff::7/128",
+        "routeurID":"7.7.7.7"
+    },
+
+    "Y1":{
+        "as":"Y",
+        "loopback":"2001:db8:20:ffff::1/128",
+        "routeurID":"8.8.8.8"
+    },
+    "Y2":{
+        "as":"Y",
+        "loopback":"2001:db8:20:ffff::2/128",
+        "routeurID":"9.9.9.9"
+    },
+    "Y3":{
+        "as":"Y",
+        "loopback":"2001:db8:20:ffff::3/128",
+        "routeurID":"10.10.10.10"
+    },
+    "Y4":{
+        "as":"Y",
+        "loopback":"2001:db8:20:ffff::4/128",
+        "routeurID":"11.11.11.11"
+    },
+    "Y5":{
+        "as":"Y",
+        "loopback":"2001:db8:20:ffff::5/128",
+        "routeurID":"12.12.12.12"
+    },
+    "Y6":{
+        "as":"Y",
+        "loopback":"2001:db8:20:ffff::6/128",
+        "routeurID":"13.13.13.13"
+    },
+    "Y7":{
+        "as":"Y",
+        "loopback":"2001:db8:20:ffff::7/128",
+        "routeurID":"14.14.14.14"
+    }
+  },
+
+  "links": [
+    {"routeur_a":"X1","interface_a":"GigabitEthernet1/0","routeur_b":"X2","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:10:0::/64"},
+    {"routeur_a":"X1","interface_a":"GigabitEthernet2/0","routeur_b":"X3","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:10:1::/64"},
+    {"routeur_a":"X2","interface_a":"GigabitEthernet2/0","routeur_b":"X3","interface_b":"GigabitEthernet2/0","sous_res":"2001:db8:10:2::/64"},
+    {"routeur_a":"X2","interface_a":"GigabitEthernet3/0","routeur_b":"X4","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:10:3::/64"},
+    {"routeur_a":"X3","interface_a":"GigabitEthernet3/0","routeur_b":"X5","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:10:4::/64"},
+    {"routeur_a":"X4","interface_a":"GigabitEthernet2/0","routeur_b":"X5","interface_b":"GigabitEthernet2/0","sous_res":"2001:db8:10:5::/64"},
+    {"routeur_a":"X4","interface_a":"FastEthernet0/0","routeur_b":"X6","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:10:6::/64"},
+    {"routeur_a":"X4","interface_a":"GigabitEthernet3/0","routeur_b":"X7","interface_b":"GigabitEthernet2/0","sous_res":"2001:db8:10:7::/64"},
+    {"routeur_a":"X5","interface_a":"GigabitEthernet3/0","routeur_b":"X6","interface_b":"GigabitEthernet2/0","sous_res":"2001:db8:10:8::/64"},
+    {"routeur_a":"X5","interface_a":"FastEthernet0/0","routeur_b":"X7","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:10:9::/64"},
+
+    {"routeur_a":"X6","interface_a":"GigabitEthernet3/0","routeur_b":"Y1","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:100:0::/64"},
+    {"routeur_a":"X7","interface_a":"GigabitEthernet3/0","routeur_b":"Y2","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:100:1::/64"},
+
+    {"routeur_a":"Y1","interface_a":"GigabitEthernet2/0","routeur_b":"Y3","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:20:0::/64"},
+    {"routeur_a":"Y1","interface_a":"GigabitEthernet3/0","routeur_b":"Y4","interface_b":"GigabitEthernet2/0","sous_res":"2001:db8:20:1::/64"},
+    {"routeur_a":"Y2","interface_a":"GigabitEthernet2/0","routeur_b":"Y3","interface_b":"GigabitEthernet2/0","sous_res":"2001:db8:20:2::/64"},
+    {"routeur_a":"Y2","interface_a":"GigabitEthernet3/0","routeur_b":"Y3","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:20:3::/64"},
+    {"routeur_a":"Y3","interface_a":"GigabitEthernet3/0","routeur_b":"Y4","interface_b":"GigabitEthernet3/0","sous_res":"2001:db8:20:4::/64"},
+    {"routeur_a":"Y3","interface_a":"FastEthernet0/0","routeur_b":"Y5","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:20:5::/64"},
+    {"routeur_a":"Y4","interface_a":"FastEthernet0/0","routeur_b":"Y6","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:20:6::/64"},
+    {"routeur_a":"Y5","interface_a":"GigabitEthernet2/0","routeur_b":"Y6","interface_b":"GigabitEthernet2/0","sous_res":"2001:db8:20:7::/64"},
+    {"routeur_a":"Y5","interface_a":"GigabitEthernet3/0","routeur_b":"Y7","interface_b":"GigabitEthernet2/0","sous_res":"2001:db8:20:8::/64"},
+    {"routeur_a":"Y6","interface_a":"GigabitEthernet3/0","routeur_b":"Y7","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:20:9::/64"}
+  ],
+
+  "addressing": {},
+  "policies": {}
+}
