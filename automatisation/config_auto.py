@@ -94,6 +94,7 @@ def config_RIP(node: Node, router_name: str, as_routeur: str):
     time.sleep(1)
     send(tn, "")
 
+    # Début des commandes :
     send(tn, "enable")
     send(tn, "configure terminal")
     send(tn, "ipv6 unicast-routing")
@@ -133,78 +134,62 @@ def config_RIP(node: Node, router_name: str, as_routeur: str):
 
     send(tn, "end")
     time.sleep(1)
-    send(tn, "write memory", delay=0.5)
+    send(tn, "write memory",delay=0.5)
+    send(tn, "", delay=1) #au cas où
     tn.close()
 
 
-def config_OSPF(node: Node, router_name: str, as_routeur: str,
-                process_id: int = OSPF_PROCESS_ID, area: int = DEFAULT_OSPF_AREA):
+def config_OSPF(node: Node, router_name: str, as_routeur: str, process_id: int = OSPF_PROCESS_ID, area: int = DEFAULT_OSPF_AREA):
     tn = telnetlib.Telnet(node.console_host, node.console)
     time.sleep(1)
-    tn.write(b"\r\n")
-    time.sleep(0.5)
+    send(tn, "")
+    
     #Début des commandes :
-    tn.write(f"enable\r\n".encode("ascii"))
-    time.sleep(0.3)
-    tn.write(f"configure terminal\r\n".encode("ascii"))
-    time.sleep(0.3)
-    tn.write(f"ipv6 unicast-routing\r\n".encode("ascii"))
-    time.sleep(0.3)
+    send(tn, "enable")
+    send(tn, "configure terminal")
+    send(tn, "ipv6 unicast-routing")
+
     #routeur ID :
-    tn.write(f"ipv6 router ospf 1\r\n".encode("ascii")) #1 variable ?
-    time.sleep(0.3)
+    send(tn, f"ipv6 router ospf {process_id}")
     routeurID = intent["routeurs"][router_name].get("routeurID")
-    tn.write(f"router-id {routeurID}\r\n".encode("ascii"))
-    time.sleep(0.3)
-    tn.write(b"exit\r\n")
-    time.sleep(0.3)
+    send(tn, f"router-id {routeurID}")
+    send(tn, "exit")
+
     #loopback :
-    tn.write(b"interface Loopback0\r\n")
-    time.sleep(0.3)
-    tn.write(b"ipv6 enable\r\n")
-    time.sleep(0.3)
+    send(tn, "interface Loopback0")
+    send(tn, "ipv6 enable")
     loopback_address = intent["routeurs"][router_name].get("loopback")
-    tn.write(f"ipv6 address {loopback_address}\r\n".encode("ascii"))
-    time.sleep(0.3)
-    tn.write(b"ipv6 ospf 1 area 0\r\n") #voir si 1 et 0 peuvent être variables
-    time.sleep(0.3)
-    tn.write(b"exit\r\n")
-    time.sleep(0.3)
+    send(tn, f"ipv6 address {loopback_address}")
+    send(tn, f"ipv6 ospf {process_id} area {area}")
+    send(tn, "exit")
+
     #liens avec voisins :
     for link in intent["links"]:
         if router_name == link["routeur_a"]:
             voisin = link["routeur_b"]
-            tn.write(f"interface {link["interface_a"]}\r\n".encode("ascii"))
-            time.sleep(0.3)
-            tn.write(b"ipv6 enable\r\n")
-            time.sleep(0.3)
-            tn.write(f"ipv6 address {link["sous_res"]}\r\n".encode("ascii"))
-            time.sleep(0.3)
-            if intent["routeurs"][voisin].get("as") == as_routeur:
-                tn.write(b"ipv6 ospf 1 area 0\r\n")
-                time.sleep(0.3)
-            tn.write(b"no shutdown\r\n")
-            time.sleep(0.3)
-            tn.write(b"exit\r\n")
-            time.sleep(0.3)
+            iface = link["interface_a"]
+            ip = iface_addr(link["sous_res"], 1)
         elif router_name == link["routeur_b"]:
             voisin = link["routeur_a"]
-            tn.write(f"interface {link["interface_b"]}\r\n".encode("ascii"))
-            time.sleep(0.3)
-            tn.write(b"ipv6 enable\r\n")
-            time.sleep(0.3)
-            tn.write(f"ipv6 address {link["sous_res"]}\r\n".encode("ascii"))
-            time.sleep(0.3)
-            if intent["routeurs"][voisin].get("as") == as_routeur:
-                tn.write(b"ipv6 ospf 1 area 0\r\n")
-                time.sleep(0.3)
-            tn.write(b"no shutdown\r\n")
-            time.sleep(0.3)
-            tn.write(b"exit\r\n")
-            time.sleep(0.3)
-    tn.write(b"end\r\n")
-    tn.write(b"write\r\n")
+            iface = link["interface_b"]
+            ip = iface_addr(link["sous_res"], 2)
+        else:
+            continue
+
+        send(tn, f"interface {iface}")
+        send(tn, "ipv6 enable")
+        send(tn, f"ipv6 address {ip}")
+        if intent["routeurs"][voisin].get("as") == as_routeur:
+            send(tn, f"ipv6 ospf {process_id} area {area}")
+        send(tn, "no shutdown")
+        send(tn, "exit")
+
+    send(tn, "end")
+    time.sleep(1)
+    send(tn, "write memory",delay=0.5)
+    send(tn, "", delay=1)
     tn.close()
+
 
 
 # ---------------------- BGP config ----------------------
@@ -317,8 +302,8 @@ def main():
         node = Node(project_id=project.project_id, name=router_name, connector=server)
         node.get()
 
-        # Optionnel : reset
-        # reset_router(node)
+        # Optionnel : reset (fonctionne mal)
+        #reset_router(node)
 
         ensure_node_started(node, wait_s=2)
 
@@ -334,10 +319,6 @@ def main():
         config_BGP(node, router_name, neigh, y_hub="Y1")
 
     print("Configuration terminée.")
-
-if __name__ == "__main__":
-    main()
-
 
 if __name__ == "__main__":
     main()
