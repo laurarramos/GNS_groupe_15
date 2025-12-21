@@ -106,7 +106,7 @@
     {"routeur_a":"Y1","interface_a":"GigabitEthernet2/0","routeur_b":"Y3","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:20:0::/64"},
     {"routeur_a":"Y1","interface_a":"GigabitEthernet3/0","routeur_b":"Y4","interface_b":"GigabitEthernet2/0","sous_res":"2001:db8:20:1::/64"},
     {"routeur_a":"Y2","interface_a":"GigabitEthernet2/0","routeur_b":"Y3","interface_b":"GigabitEthernet2/0","sous_res":"2001:db8:20:2::/64"},
-    {"routeur_a":"Y2","interface_a":"GigabitEthernet3/0","routeur_b":"Y3","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:20:3::/64"},
+    {"routeur_a":"Y2","interface_a":"GigabitEthernet3/0","routeur_b":"Y4","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:20:3::/64"},
     {"routeur_a":"Y3","interface_a":"GigabitEthernet3/0","routeur_b":"Y4","interface_b":"GigabitEthernet3/0","sous_res":"2001:db8:20:4::/64"},
     {"routeur_a":"Y3","interface_a":"FastEthernet0/0","routeur_b":"Y5","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:20:5::/64"},
     {"routeur_a":"Y4","interface_a":"FastEthernet0/0","routeur_b":"Y6","interface_b":"GigabitEthernet1/0","sous_res":"2001:db8:20:6::/64"},
