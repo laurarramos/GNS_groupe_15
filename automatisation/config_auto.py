@@ -231,6 +231,13 @@ def config_BGP(node: Node, router_name: str, neigh):
             send(tn, f"neighbor {peer_ip} remote-as {peer_asn}")
             ebgp_peers.append(peer_ip)
 
+            if as_v in intent["AS"][as_r]["providers"]:
+                pass
+            elif as_v in intent["AS"][as_r]["customers"]:
+                pass
+            elif as_v in intent["AS"][as_r]["peers"]:
+                pass
+
     # iBGP: full-mesh
     ibgp_peers = []
     for r2, info2 in intent["routeurs"].items():
