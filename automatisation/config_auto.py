@@ -194,7 +194,7 @@ def config_OSPF(node: Node, router_name: str, as_routeur: str, process_id: int =
 
 # ---------------------- BGP config ----------------------
 
-def config_BGP(node: Node, router_name: str, neigh, y_hub: str = "Y1"):
+def config_BGP(node: Node, router_name: str, neigh):
     as_r = intent["routeurs"][router_name]["as"]
     border = is_border(router_name, intent, neigh)
 
@@ -237,22 +237,13 @@ def config_BGP(node: Node, router_name: str, neigh, y_hub: str = "Y1"):
             send(tn, f"neighbor {peer_ip} remote-as {peer_asn}")
             ebgp_peers.append(peer_ip)
 
-    # iBGP: uniquement AS Y, hub-and-spoke avec Y1
+    # iBGP: full-mesh
     ibgp_peers = []
-    if as_r == "Y":
-        if router_name == y_hub:
-            for r2, info2 in intent["routeurs"].items():
-                if r2 == y_hub or info2["as"] != "Y":
-                    continue
-                lo = info2["loopback"].split("/")[0]
-                send(tn, f"neighbor {lo} remote-as {asn}")
-                send(tn, f"neighbor {lo} update-source Loopback0")
-                ibgp_peers.append(lo)
-        else:
-            hub_lo = intent["routeurs"][y_hub]["loopback"].split("/")[0]
-            send(tn, f"neighbor {hub_lo} remote-as {asn}")
-            send(tn, f"neighbor {hub_lo} update-source Loopback0")
-            ibgp_peers.append(hub_lo)
+    for r, info in intent["routeurs"].items():
+        lo = info["loopback"].split("/")[0]
+        send(tn, f"neighbor {lo} remote-as {asn}")
+        send(tn, f"neighbor {lo} update-source Loopback0")
+        ibgp_peers.append(lo)
 
     # AF IPv6
     send(tn, "address-family ipv6")
@@ -260,11 +251,7 @@ def config_BGP(node: Node, router_name: str, neigh, y_hub: str = "Y1"):
         send(tn, f"neighbor {p} activate")
     for p in ibgp_peers:
         send(tn, f"neighbor {p} activate")
-
-    # next-hop-self sur le hub
-    if as_r == "Y" and router_name == y_hub:
-        for p in ibgp_peers:
-            send(tn, f"neighbor {p} next-hop-self")
+        send(tn, f"neighbor {p} next-hop-self")          
 
     # policies (redistribute + aggregate) uniquement sur bordure
     igp = intent["AS"][as_r]["igp"]
