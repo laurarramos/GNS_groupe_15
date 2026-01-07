@@ -239,8 +239,12 @@ def config_BGP(node: Node, router_name: str, neigh):
 
     # iBGP: full-mesh
     ibgp_peers = []
-    for r, info in intent["routeurs"].items():
-        lo = info["loopback"].split("/")[0]
+    for r2, info2 in intent["routeurs"].items():
+        if r2 == router_name:
+            continue
+        if info2["as"] != as_r:
+            continue
+        lo = info2["loopback"].split("/")[0]
         send(tn, f"neighbor {lo} remote-as {asn}")
         send(tn, f"neighbor {lo} update-source Loopback0")
         ibgp_peers.append(lo)
@@ -251,7 +255,9 @@ def config_BGP(node: Node, router_name: str, neigh):
         send(tn, f"neighbor {p} activate")
     for p in ibgp_peers:
         send(tn, f"neighbor {p} activate")
-        send(tn, f"neighbor {p} next-hop-self")          
+    if border:
+        for p in ibgp_peers:
+            send(tn, f"neighbor {p} next-hop-self")       
 
     # policies (redistribute + aggregate) uniquement sur bordure
     igp = intent["AS"][as_r]["igp"]
@@ -303,7 +309,7 @@ def main():
             config_OSPF(node, router_name, as_routeur)
 
         # BGP après IGP
-        config_BGP(node, router_name, neigh, y_hub="Y1")
+        config_BGP(node, router_name, neigh)
 
     print("Configuration terminée.")
 
