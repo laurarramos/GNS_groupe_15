@@ -289,8 +289,10 @@ def main():
         node = Node(project_id=project.project_id, name=router_name, connector=server)
         node.get()
 
-        # Optionnel : reset (fonctionne mal)
-        #reset_router(node)
+        tn = telnetlib.Telnet(node.console_host, node.console)
+        send(tn, "no")
+        send(tn, "")
+        tn.close()
 
         ensure_node_started(node, wait_s=2)
 
