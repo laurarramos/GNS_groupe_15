@@ -4,13 +4,20 @@
         "igp":"RIP",
         "nom_process":"ASX",
         "asnumber":"65001",
-        "network":"2001:DB8:10::/48"
+        "network":"2001:DB8:10::/48",
+        "providers":["Y"],
+        "customers":[],
+        "peers":[]
+
     },
     "Y":{
         "igp":"OSPF",
         "nom_process":"ASY",
         "asnumber":"65002",
-        "network":"2001:DB8:20::/48"
+        "network":"2001:DB8:20::/48",
+        "providers":[],
+        "customers":["X"],
+        "peers":[]
     }
   },
 
