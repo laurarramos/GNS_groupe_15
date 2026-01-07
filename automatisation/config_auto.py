@@ -198,12 +198,6 @@ def config_BGP(node: Node, router_name: str, neigh):
     as_r = intent["routeurs"][router_name]["as"]
     border = is_border(router_name, intent, neigh)
 
-    # On configure BGP si :
-    # - routeur bordure (inter-AS) OU
-    # - routeur dans AS Y (iBGP interne)
-    if (not border) and (as_r != "Y"):
-        return
-
     tn = telnetlib.Telnet(node.console_host, node.console)
     time.sleep(1)
     send(tn, "")
@@ -276,10 +270,10 @@ def config_BGP(node: Node, router_name: str, neigh):
     send(tn, "write memory", delay=0.5)
 
     # Retour BGP -> RIP dans AS X (seulement bordure)
-    if border and as_r == "X":
+    if border and igp == "RIP":
         send(tn, "conf t")
-        send(tn, f"ipv6 router rip {intent['AS']['X']['nom_process']}")
-        send(tn, f"redistribute bgp {intent['AS']['X']['asnumber']} metric 1")
+        send(tn, f"ipv6 router rip {intent['AS'][as_r]['nom_process']}")
+        send(tn, f"redistribute bgp {intent['AS'][as_r]['asnumber']} metric 1")
         send(tn, "end")
         send(tn, "write memory", delay=0.5)
 
