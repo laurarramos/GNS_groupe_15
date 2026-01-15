@@ -45,18 +45,15 @@ def ensure_node_started(node: Node, wait_s: float = 2.0):
         time.sleep(wait_s)
         node.get()
 
-def reset_router(node: Node):
-    """Optionnel: wipe config + reload"""
-    tn = telnetlib.Telnet(node.console_host, node.console)
-    time.sleep(1)
-    send(tn, "")
-    send(tn, "enable")
-    send(tn, "write erase")
-    send(tn, "")
-    send(tn, "reload")
-    send(tn, "")
-    send(tn, "no")  # ne pas sauvegarder
-    tn.close()
+def prefix64_from_48(net48: str, link_id: int) -> str:
+    n48 = IPv6Network(net48, strict=False)
+    base = int(n48.network_address)
+
+    # Le subnet-id (/64) correspond aux 16 bits entre /48 et /64.
+    # On place link_id dans ces 16 bits => décalage de 64 bits.
+    addr64 = base + (int(link_id) << 64)
+    n64 = IPv6Network((addr64, 64))
+    return f"{n64.network_address}/{n64.prefixlen}"
 
 
 # ---------------------- Topology helpers ----------------------
@@ -73,18 +70,12 @@ def is_border(router: str, intent_dict, neigh):
     as_r = intent_dict["routeurs"][router]["as"]
     return any(intent_dict["routeurs"][v]["as"] != as_r for v in neigh[router])
 
-def get_link_prefix(router_a: str, router_b: str, links):
-    """
-    Retourne (prefix, router_a_is_link_routeur_a)
-    - prefix = link["sous_res"]
-    - True si router_a correspond à link["routeur_a"], False sinon
-    """
+def get_link(router_a: str, router_b: str, links):
     for link in links:
-        if link["routeur_a"] == router_a and link["routeur_b"] == router_b:
-            return link["sous_res"], True
-        if link["routeur_b"] == router_a and link["routeur_a"] == router_b:
-            return link["sous_res"], False
-    return None, None
+        a, b = link["routeur_a"], link["routeur_b"]
+        if (a == router_a and b == router_b) or (a == router_b and b == router_a):
+            return link
+    return None
 
 
 # ---------------------- IGP configs ----------------------
@@ -116,17 +107,30 @@ def config_RIP(node: Node, router_name: str, as_routeur: str):
         if router_name == link["routeur_a"]:
             voisin = link["routeur_b"]
             iface = link["interface_a"]
-            ip = iface_addr(link["sous_res"], 1)
+            host_id = 1
         elif router_name == link["routeur_b"]:
             voisin = link["routeur_a"]
             iface = link["interface_b"]
-            ip = iface_addr(link["sous_res"], 2)
+            host_id = 2
         else:
             continue
+
+        #Choix du /48 à utiliser (intra-AS ou transit)
+        if link.get("transit", False):
+            net48 = intent["transit"]["network"]
+        else:
+            net48 = intent["AS"][as_routeur]["network"]
+
+        #Construit le /64 depuis link_id
+        prefix64 = prefix64_from_48(net48, link["link_id"])
+
+        #Construit l'IP d'interface
+        ip = iface_addr(prefix64, host_id)
 
         send(tn, f"interface {iface}")
         send(tn, "ipv6 enable")
         send(tn, f"ipv6 address {ip}")
+
         if intent["routeurs"][voisin]["as"] == as_routeur:
             send(tn, f"ipv6 rip {nom_process} enable")
         send(tn, "no shutdown")
@@ -168,17 +172,30 @@ def config_OSPF(node: Node, router_name: str, as_routeur: str, process_id: int =
         if router_name == link["routeur_a"]:
             voisin = link["routeur_b"]
             iface = link["interface_a"]
-            ip = iface_addr(link["sous_res"], 1)
+            host_id = 1
         elif router_name == link["routeur_b"]:
             voisin = link["routeur_a"]
             iface = link["interface_b"]
-            ip = iface_addr(link["sous_res"], 2)
+            host_id = 2
         else:
             continue
+
+        #Choix du /48 à utiliser (intra-AS ou transit)
+        if link.get("transit", False):  
+            net48 = intent["transit"]["network"]    
+        else:
+            net48 = intent["AS"][as_routeur]["network"]
+        
+        #Construit le /64 depuis link_id
+        prefix64 = prefix64_from_48(net48, link["link_id"]) 
+
+        #Construit l'IP d'interface
+        ip = iface_addr(prefix64, host_id)
 
         send(tn, f"interface {iface}")
         send(tn, "ipv6 enable")
         send(tn, f"ipv6 address {ip}")
+
         if intent["routeurs"][voisin].get("as") == as_routeur:
             send(tn, f"ipv6 ospf {process_id} area {area}")
         send(tn, "no shutdown")
@@ -189,8 +206,6 @@ def config_OSPF(node: Node, router_name: str, as_routeur: str, process_id: int =
     send(tn, "write memory",delay=0.5)
     send(tn, "", delay=1)
     tn.close()
-
-
 
 # ---------------------- BGP config ----------------------
 
@@ -218,11 +233,17 @@ def config_BGP(node: Node, router_name: str, neigh):
             if as_v == as_r:
                 continue
 
-            prefix, router_is_a = get_link_prefix(router_name, v, intent["links"])
-            if not prefix:
+            link=get_link(router_name, v, intent["links"])
+            if not link:
                 continue
 
-            if router_is_a:
+            if not link.get("transit", False):
+                continue
+
+            transit_48 = intent["transit"]["network"]
+            prefix = prefix64_from_48(transit_48, link["link_id"])
+
+            if router_name == link["routeur_a"]:
                 peer_ip = iface_addr(prefix, 2).split("/")[0]
             else:
                 peer_ip = iface_addr(prefix, 1).split("/")[0]
