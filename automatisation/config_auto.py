@@ -56,6 +56,14 @@ def prefix64_from_48(net48: str, link_id: int) -> str:
     n64 = IPv6Network((addr64, 64))
     return f"{n64.network_address}/{n64.prefixlen}"
 
+def loopback_from_as48(as48: str, idx: int) -> str:
+    net48 = IPv6Network(as48, strict=False)
+    base = int(net48.network_address)
+
+    addr = base + (0xFFFF << 64) + int(idx)
+    n128 = IPv6Network((addr, 128))
+    return f"{n128.network_address}/{n128.prefixlen}"
+
 
 # ---------------------- Topology helpers ----------------------
 
@@ -96,7 +104,9 @@ def config_RIP(node: Node, router_name: str, as_routeur: str):
     send(tn, "exit")
 
     # Loopback
-    loopback_address = intent["routeurs"][router_name]["loopback"]
+    idx = intent["routeurs"][router_name]["index"]
+    as48 = intent["AS"][as_routeur]["network"]
+    loopback_address = loopback_from_as48(as48, idx)
     send(tn, "interface Loopback0")
     send(tn, "ipv6 enable")
     send(tn, f"ipv6 address {loopback_address}")
@@ -161,9 +171,11 @@ def config_OSPF(node: Node, router_name: str, as_routeur: str, process_id: int =
     send(tn, "exit")
 
     #loopback :
+    idx = intent["routeurs"][router_name]["index"]
+    as48 = intent["AS"][as_routeur]["network"]
+    loopback_address = loopback_from_as48(as48, idx)
     send(tn, "interface Loopback0")
     send(tn, "ipv6 enable")
-    loopback_address = intent["routeurs"][router_name].get("loopback")
     send(tn, f"ipv6 address {loopback_address}")
     send(tn, f"ipv6 ospf {process_id} area {area}")
     send(tn, "exit")
@@ -267,7 +279,9 @@ def config_BGP(node: Node, router_name: str, neigh):
             continue
         if info2["as"] != as_r:
             continue
-        lo = info2["loopback"].split("/")[0]
+        idx2 = info2["index"]
+        as48 = intent["AS"][as_r]["network"]  # même AS (iBGP)
+        lo = loopback_from_as48(as48, idx2).split("/")[0]
         send(tn, f"neighbor {lo} remote-as {asn}")
         send(tn, f"neighbor {lo} update-source Loopback0")
         ibgp_peers.append(lo)
