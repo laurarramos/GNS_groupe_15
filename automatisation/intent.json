@@ -21,6 +21,10 @@
     }
   },
 
+  "transit": {
+    "network": "2001:db8:100::/48"
+  },
+
   "routeurs": {
      "X1": { "as": "X", "loopback": "2001:db8:10:ffff::1/128", "routeurID": "1.1.1.1" },
     "X2": { "as": "X", "loopback": "2001:db8:10:ffff::2/128", "routeurID": "2.2.2.2" },

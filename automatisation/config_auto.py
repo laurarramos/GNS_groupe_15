@@ -4,6 +4,8 @@ import time
 import telnetlib
 from ipaddress import IPv6Network
 
+from collections import defaultdict
+
 from gns3fy import Gns3Connector, Project, Node
 
 # --- IMPORTANT: éviter que le proxy INSA (Squid) intercepte l'API locale GNS3 ---
@@ -23,7 +25,6 @@ project = Project(name="structure_vide", connector=server)
 project.get()
 project.open()
 project.get_nodes()
-
 
 # ---------------------- Utils Telnet & IP helpers ----------------------
 
