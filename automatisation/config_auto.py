@@ -64,6 +64,19 @@ def loopback_from_as48(as48: str, idx: int) -> str:
     n128 = IPv6Network((addr, 128))
     return f"{n128.network_address}/{n128.prefixlen}"
 
+def relation_between(as_local: str, as_remote: str) -> str:
+    """
+    Relation vue depuis as_local vers as_remote.
+    Retourne: 'PROVIDER' / 'CLIENT' / 'PEER' / 'UNKNOWN'
+    """
+    if as_remote in intent["AS"][as_local].get("providers", []):
+        return "PROVIDER"
+    if as_remote in intent["AS"][as_local].get("customers", []):
+        return "CLIENT"
+    if as_remote in intent["AS"][as_local].get("peers", []):
+        return "PEER"
+    return "UNKNOWN"
+
 
 # ---------------------- Topology helpers ----------------------
 
@@ -323,6 +336,133 @@ def config_BGP(node: Node, router_name: str, neigh):
     tn.close()
 
 
+# ---------------------- Communautés ----------------------
+
+def config_communities(node: Node, router_name: str, neigh):
+    as_r = intent["routeurs"][router_name]["as"]
+    asn = int(intent["AS"][as_r]["asnumber"])
+    net48 = intent["AS"][as_r]["network"]
+    border = is_border(router_name, intent, neigh)
+    ebgp_neighbors = []  # [(peer_ip, relation)]
+
+    tn = telnetlib.Telnet(node.console_host, node.console)
+    time.sleep(1)
+    send(tn, "")
+    send(tn, "enable")
+    send(tn, "conf t")
+
+    # Nouvelle syntaxe communautés BGP
+    send(tn, "ip bgp-community new-format")
+
+    # Voisins iBGP
+    ibgp_peers = []
+
+    for r2, info2 in intent["routeurs"].items():
+        if r2 == router_name:
+            continue
+        if info2["as"] != as_r:
+            continue
+
+        idx2 = info2["index"]
+        lo2 = loopback_from_as48(net48, idx2).split("/")[0]  # IP seule
+        ibgp_peers.append(lo2)
+    
+    # Communautés et local pref sur bordure
+    if border:
+        # 1) Commmunity-lists
+        send(tn, "no ip community-list standard CLIENT")
+        send(tn, "no ip community-list standard PEER")
+        send(tn, "no ip community-list standard PROVIDER")
+        send(tn, f"ip community-list standard CLIENT permit {asn}:100")
+        send(tn, f"ip community-list standard PEER permit {asn}:200")
+        send(tn, f"ip community-list standard PROVIDER permit {asn}:300")
+
+        # 2) Route-maps IN
+        send(tn, "route-map IN-CLIENT permit 10")
+        send(tn, f"set community {asn}:100 additive")
+        send(tn, "set local-preference 200")
+        send(tn, "exit")
+
+        send(tn, "route-map IN-PEER permit 10")
+        send(tn, f"set community {asn}:200 additive")
+        send(tn, "set local-preference 150")
+        send(tn, "exit")
+
+        send(tn, "route-map IN-PROVIDER permit 10")
+        send(tn, f"set community {asn}:300 additive")
+        send(tn, "set local-preference 100")
+        send(tn, "exit")
+
+        # 3) Route-maps OUT
+        send(tn, "route-map OUT-CLIENT permit 10")
+        send(tn, "exit")
+
+        send(tn, "route-map OUT-PEER permit 10")
+        send(tn, f"match community CLIENT")
+        send(tn, "exit")
+        send(tn, "route-map OUT-PEER deny 20")
+        send(tn, "exit")
+
+        send(tn, "route-map OUT-PROVIDER permit 10")
+        send(tn, f"match community CLIENT")
+        send(tn, "exit")
+        send(tn, "route-map OUT-PROVIDER deny 20")
+        send(tn, "exit")
+
+        for v in neigh[router_name]:
+            as_v = intent["routeurs"][v]["as"]
+            if as_v == as_r:
+                continue
+
+            link=get_link(router_name, v, intent["links"])
+            if not link or not link.get("transit", False):
+                continue
+
+            transit_48 = intent["transit"]["network"]
+            prefix64 = prefix64_from_48(transit_48, link["link_id"])
+            
+            if router_name == link["routeur_a"]:
+                peer_ip = iface_addr(prefix64, 2).split("/")[0]
+            else:
+                peer_ip = iface_addr(prefix64, 1).split("/")[0]
+
+            relation = relation_between(as_r, as_v)
+
+            ebgp_neighbors.append((peer_ip, relation))
+
+        send(tn, f"router bgp {asn}")
+        send(tn, "address-family ipv6")
+
+        for peer_ip, relation in ebgp_neighbors:
+            if relation == "CLIENT":
+                in_rm = "IN-CLIENT"
+                out_rm = "OUT-CLIENT"
+            elif relation == "PROVIDER":
+                in_rm = "IN-PROVIDER"
+                out_rm = "OUT-PROVIDER"
+            elif relation == "PEER":
+                in_rm = "IN-PEER"
+                out_rm = "OUT-PEER"
+            else:
+                continue
+
+            send(tn, f"neighbor {peer_ip} route-map {in_rm} in") 
+            send(tn, f"neighbor {peer_ip} route-map {out_rm} out")
+
+        send(tn, "exit-address-family")
+        send(tn, "exit")
+    
+    # On applique send-community aux iBGP
+    send(tn, f"router bgp {asn}")
+    send(tn, "address-family ipv6")
+    for lo in ibgp_peers:
+        send(tn, f"neighbor {lo} send-community")
+    send(tn, "exit-address-family")
+    
+    send(tn, "end")
+    send(tn, "write memory", delay=0.5)
+    tn.close()
+
 # ---------------------- Main ----------------------
 
 def main():
@@ -349,6 +489,9 @@ def main():
 
         # BGP après IGP
         config_BGP(node, router_name, neigh)
+
+        # Communautés après BGP
+        config_communities(node, router_name, neigh)
 
     print("Configuration terminée.")
 
