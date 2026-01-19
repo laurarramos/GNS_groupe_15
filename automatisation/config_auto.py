@@ -336,6 +336,15 @@ def config_OSPF(node: Node, router_name: str, as_routeur: str, process_id: int =
 # ---------------------- BGP config ----------------------
 
 def config_BGP(node: Node, router_name: str, neigh):
+    """
+    Configure iBGP et eBGP IPv6 pour un routeur.
+    Args:
+        node (Node): Node GNS3.
+        router_name (str): Nom du routeur.
+        neigh (dict): Voisins du routeur.
+    Returns:
+        None
+    """
     as_r = intent["routeurs"][router_name]["as"]
     border = is_border(router_name, intent, neigh)
 
