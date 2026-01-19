@@ -29,17 +29,39 @@ project.get_nodes()
 # ---------------------- Utils Telnet & IP helpers ----------------------
 
 def send(tn, cmd: str, delay: float = TELNET_DELAY):
+    """
+    Envoie une commande CLI via Telnet avec temporisation.
+    Args:
+        tn (telnetlib.Telnet): Session Telnet active.
+        cmd (str): Commande à envoyer.
+        delay (float): Délai après envoi en secondes.
+    Returns:
+        None
+    """
     tn.write((cmd + "\r\n").encode("ascii", errors="ignore"))
     time.sleep(delay)
 
 def iface_addr(prefix: str, host_id: int) -> str:
     """
-    prefix = '2001:db8:100:0::/64' -> retourne '2001:db8:100:0::1/64' ou '...::2/64'
+    Construit une adresse IPv6 hôte à partir d’un préfixe.
+    Args:
+        prefix (str): Préfixe IPv6 (ex: "2001:db8:100:0::/64").
+        host_id (int): Identifiant hôte à ajouter (ex: 1, 2, ...).
+    Returns:
+        str: Adresse IPv6 au format "addr/prefixlen".
     """
     net = IPv6Network(prefix, strict=False)
     return f"{net.network_address + host_id}/{net.prefixlen}"
 
 def ensure_node_started(node: Node, wait_s: float = 2.0):
+    """
+    Démarre un node GNS3 s’il n’est pas déjà lancé.
+    Args:
+        node (Node): Node GNS3 à vérifier.
+        wait_s (float): Temps d’attente après démarrage.
+    Returns:
+        None
+    """
     node.get()
     if node.status != "started":
         node.start()
@@ -47,6 +69,14 @@ def ensure_node_started(node: Node, wait_s: float = 2.0):
         node.get()
 
 def prefix64_from_48(net48: str, link_id: int) -> str:
+    """
+    Génère un préfixe IPv6 /64 à partir d’un /48 et d’un link_id.
+    Args:
+        net48 (str): Réseau IPv6 /48.
+        link_id (int): Identifiant de lien.
+    Returns:
+        str: Préfixe IPv6 /64.
+    """
     n48 = IPv6Network(net48, strict=False)
     base = int(n48.network_address)
 
@@ -57,6 +87,14 @@ def prefix64_from_48(net48: str, link_id: int) -> str:
     return f"{n64.network_address}/{n64.prefixlen}"
 
 def loopback_from_as48(as48: str, idx: int) -> str:
+    """
+    Génère une adresse IPv6 /128 de loopback à partir du /48 d’un AS.
+    Args:
+        as48 (str): Réseau IPv6 /48 de l’AS.
+        idx (int): Index du routeur.
+    Returns:
+        str: Adresse IPv6 /128.
+    """
     net48 = IPv6Network(as48, strict=False)
     base = int(net48.network_address)
 
@@ -66,8 +104,12 @@ def loopback_from_as48(as48: str, idx: int) -> str:
 
 def relation_between(as_local: str, as_remote: str) -> str:
     """
-    Relation vue depuis as_local vers as_remote.
-    Retourne: 'PROVIDER' / 'CLIENT' / 'PEER' / 'UNKNOWN'
+    Détermine la relation BGP entre deux AS du point de vue local.
+    Args:
+        as_local (str): AS local.
+        as_remote (str): AS distant.
+    Returns:
+        str: Relation ('CLIENT', 'PROVIDER', 'PEER', 'UNKNOWN').
     """
     if as_remote in intent["AS"][as_local].get("providers", []):
         return "PROVIDER"
@@ -81,6 +123,13 @@ def relation_between(as_local: str, as_remote: str) -> str:
 # ---------------------- Topology helpers ----------------------
 
 def build_neighbors(intent_dict):
+    """
+    Construit la liste des voisins de chaque routeur.
+    Args:
+        intent_dict (dict): Intent réseau.
+    Returns:
+        dict: Dictionnaire routeur → voisins.
+    """
     neigh = {r: [] for r in intent_dict["routeurs"].keys()}
     for link in intent_dict["links"]:
         a, b = link["routeur_a"], link["routeur_b"]
@@ -89,10 +138,28 @@ def build_neighbors(intent_dict):
     return neigh
 
 def is_border(router: str, intent_dict, neigh):
+    """
+    Indique si un routeur est en bordure d’AS.
+    Args:
+        router (str): Nom du routeur.
+        intent_dict (dict): Intent réseau.
+        neigh (dict): Voisins par routeur.
+    Returns:
+        bool: True si routeur de bordure.
+    """
     as_r = intent_dict["routeurs"][router]["as"]
     return any(intent_dict["routeurs"][v]["as"] != as_r for v in neigh[router])
 
 def get_link(router_a: str, router_b: str, links):
+    """
+    Recherche le lien reliant deux routeurs.
+    Args:
+        router_a (str): Premier routeur.
+        router_b (str): Second routeur.
+        links (list): Liste des liens.
+    Returns:
+        dict | None: Lien correspondant ou None.
+    """
     for link in links:
         a, b = link["routeur_a"], link["routeur_b"]
         if (a == router_a and b == router_b) or (a == router_b and b == router_a):
@@ -103,6 +170,15 @@ def get_link(router_a: str, router_b: str, links):
 # ---------------------- IGP configs ----------------------
 
 def config_RIP(node: Node, router_name: str, as_routeur: str):
+    """
+    Configure RIPng et les interfaces IPv6 d’un routeur.
+    Args:
+        node (Node): Node GNS3.
+        router_name (str): Nom du routeur.
+        as_routeur (str): AS du routeur.
+    Returns:
+        None
+    """
     tn = telnetlib.Telnet(node.console_host, node.console)
     time.sleep(1)
     send(tn, "")
@@ -168,6 +244,17 @@ def config_RIP(node: Node, router_name: str, as_routeur: str):
 
 
 def config_OSPF(node: Node, router_name: str, as_routeur: str, process_id: int = OSPF_PROCESS_ID, area: int = DEFAULT_OSPF_AREA):
+    """
+    Configure OSPFv3 et les interfaces IPv6 d’un routeur.
+    Args:
+        node (Node): Node GNS3.
+        router_name (str): Nom du routeur.
+        as_routeur (str): AS du routeur.
+        process_id (int): ID du process OSPF.
+        area (int): Aire OSPF.
+    Returns:
+        None
+    """
     tn = telnetlib.Telnet(node.console_host, node.console)
     time.sleep(1)
     send(tn, "")
@@ -336,6 +423,15 @@ def config_BGP(node: Node, router_name: str, neigh):
 # ---------------------- Communautés ----------------------
 
 def config_communities(node: Node, router_name: str, neigh):
+    """
+    Applique les communautés BGP et politiques de routage.
+    Args:
+        node (Node): Node GNS3.
+        router_name (str): Nom du routeur.
+        neigh (dict): Voisins du routeur.
+    Returns:
+        None
+    """
     as_r = intent["routeurs"][router_name]["as"]
     asn = int(intent["AS"][as_r]["asnumber"])
     net48 = intent["AS"][as_r]["network"]

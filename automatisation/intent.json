@@ -69,8 +69,5 @@
     { "routeur_a": "Y5", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y7", "interface_b": "GigabitEthernet2/0", "link_id": 8, "ospf_cost": 10 },
     { "routeur_a": "Y6", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y7", "interface_b": "GigabitEthernet1/0", "link_id": 9, "ospf_cost": 10 }
 
-  ],
-
-  "addressing": {},
-  "policies": {}
+  ]
 }
