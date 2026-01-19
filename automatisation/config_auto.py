@@ -17,6 +17,13 @@ OSPF_PROCESS_ID = 1
 DEFAULT_OSPF_AREA = 0
 TELNET_DELAY = 0.3
 
+# Route Reflectors par AS
+RR_BY_AS = {
+    "X": ["X3", "X4"],
+    "Y": ["Y3", "Y6"],
+}
+
+
 with open("intent.json", "r", encoding="utf-8") as f:
     intent = json.load(f)
 
@@ -89,6 +96,17 @@ def build_neighbors(intent_dict):
     return neigh
 
 def is_border(router: str, intent_dict, neigh):
+    '''
+    Détermine si un routeur est une bordure inter-AS.
+
+    Args:
+        - router (str): nom du routeur
+        - intent_dict (dict): dictionnaire de l'intent
+        - neigh (dict): dictionnaire des voisins construit avec build_neighbors()
+    
+    Returns:
+        - bool: True si bordure inter-AS, False sinon
+    '''
     as_r = intent_dict["routeurs"][router]["as"]
     return any(intent_dict["routeurs"][v]["as"] != as_r for v in neigh[router])
 
@@ -282,19 +300,45 @@ def config_BGP(node: Node, router_name: str, neigh):
             send(tn, f"neighbor {peer_ip} remote-as {peer_asn}")
             ebgp_peers.append(peer_ip)
 
-    # iBGP: full-mesh
+    # iBGP: Route Reflectors (plus de full-mesh)
     ibgp_peers = []
-    for r2, info2 in intent["routeurs"].items():
-        if r2 == router_name:
-            continue
-        if info2["as"] != as_r:
-            continue
-        idx2 = info2["index"]
-        as48 = intent["AS"][as_r]["network"]  # même AS (iBGP)
-        lo = loopback_from_as48(as48, idx2).split("/")[0]
-        send(tn, f"neighbor {lo} remote-as {asn}")
-        send(tn, f"neighbor {lo} update-source Loopback0")
-        ibgp_peers.append(lo)
+
+    rr_names = RR_BY_AS.get(as_r, [])
+    rr_loopbacks = []
+
+    for rr in rr_names:
+        idx_rr = intent["routeurs"][rr]["index"]
+        rr_lo = loopback_from_as48(intent["AS"][as_r]["network"], idx_rr).split("/")[0]
+        rr_loopbacks.append(rr_lo)
+
+    # cas router est RR
+    if router_name in rr_names:
+        for rr, rr_lo in zip(rr_names, rr_loopbacks): # zip(..) pour parcourir 2 listes en même temps, élément par élément
+            if rr == router_name:
+                continue
+            send(tn, f"neighbor {rr_lo} remote-as {asn}")
+            send(tn, f"neighbor {rr_lo} update-source Loopback0")
+            ibgp_peers.append(rr_lo)
+
+        for r2, info2 in intent["routeurs"].items():
+            if info2["as"] != as_r:
+                continue
+            if r2 in rr_names:
+                continue
+
+            idx2 = info2["index"]
+            lo2 = loopback_from_as48(intent["AS"][as_r]["network"], idx2).split("/")[0]
+            send(tn, f"neighbor {lo2} remote-as {asn}")
+            send(tn, f"neighbor {lo2} update-source Loopback0")
+            ibgp_peers.append(lo2)
+
+    # cas router n'est pas RR
+    else:
+        for rr_lo in rr_loopbacks:
+            send(tn, f"neighbor {rr_lo} remote-as {asn}")
+            send(tn, f"neighbor {rr_lo} update-source Loopback0")
+            ibgp_peers.append(rr_lo)
+    
 
     # AF IPv6
     send(tn, "address-family ipv6")
@@ -302,9 +346,18 @@ def config_BGP(node: Node, router_name: str, neigh):
         send(tn, f"neighbor {p} activate")
     for p in ibgp_peers:
         send(tn, f"neighbor {p} activate")
-    if border:
-        for p in ibgp_peers:
-            send(tn, f"neighbor {p} next-hop-self")       
+    send(tn, "exit")
+    if router_name in rr_names:
+        for r2, info2 in intent["routeurs"].items():
+            if info2["as"] != as_r:
+                continue
+            if r2 in rr_names: # faut pas mettre un RR-client à soi-même ni aux autres RRs
+                continue
+
+            idx2 = info2["index"]
+            lo2 = loopback_from_as48(intent["AS"][as_r]["network"], idx2).split("/")[0]
+            send(tn, f"neighbor {lo2} route-reflector-client")  
+            send(tn, f"neighbor {lo2} next-hop-self")    
 
     # policies (redistribute + aggregate) uniquement sur bordure
     igp = intent["AS"][as_r]["igp"]
@@ -318,7 +371,6 @@ def config_BGP(node: Node, router_name: str, neigh):
         send(tn, f"redistribute ospf {OSPF_PROCESS_ID}")
         send(tn, f"aggregate-address {net48} summary-only")
 
-    send(tn, "exit-address-family")
     send(tn, "end")
     send(tn, "write memory", delay=0.5)
 
@@ -446,7 +498,7 @@ def config_communities(node: Node, router_name: str, neigh):
             send(tn, f"neighbor {peer_ip} route-map {in_rm} in") 
             send(tn, f"neighbor {peer_ip} route-map {out_rm} out")
 
-        send(tn, "exit-address-family")
+        send(tn, "exit")
         send(tn, "exit")
     
     # On applique send-community aux iBGP
@@ -454,8 +506,7 @@ def config_communities(node: Node, router_name: str, neigh):
     send(tn, "address-family ipv6")
     for lo in ibgp_peers:
         send(tn, f"neighbor {lo} send-community")
-    send(tn, "exit-address-family")
-    
+   
     send(tn, "end")
     send(tn, "write memory", delay=0.5)
     tn.close()
