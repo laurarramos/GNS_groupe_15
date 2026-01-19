@@ -420,11 +420,18 @@ def config_BGP(node: Node, router_name: str, neigh):
 
     # AF IPv6
     send(tn, "address-family ipv6")
+
     for p in ebgp_peers:
         send(tn, f"neighbor {p} activate")
     for p in ibgp_peers:
         send(tn, f"neighbor {p} activate")
+
+        if router_name in rr_names:
+            send(tn, f"neighbor {p} next-hop-self")
+
     send(tn, "exit")
+
+    # RR config
     if router_name in rr_names:
         for r2, info2 in intent["routeurs"].items():
             if info2["as"] != as_r:
@@ -434,8 +441,7 @@ def config_BGP(node: Node, router_name: str, neigh):
 
             idx2 = info2["index"]
             lo2 = loopback_from_as48(intent["AS"][as_r]["network"], idx2).split("/")[0]
-            send(tn, f"neighbor {lo2} route-reflector-client")  
-            send(tn, f"neighbor {lo2} next-hop-self")    
+            send(tn, f"neighbor {lo2} route-reflector-client")         
 
     # policies (redistribute + aggregate) uniquement sur bordure
     igp = intent["AS"][as_r]["igp"]
