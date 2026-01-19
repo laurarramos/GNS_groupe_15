@@ -224,6 +224,10 @@ def config_OSPF(node: Node, router_name: str, as_routeur: str, process_id: int =
 
         if intent["routeurs"][voisin].get("as") == as_routeur:
             send(tn, f"ipv6 ospf {process_id} area {area}")
+            #OSPF Metric
+            cost = link.get("ospf_cost")
+            if cost is not None:
+                send(tn, f"ipv6 ospf cost {int(cost)}")
         send(tn, "no shutdown")
         send(tn, "exit")
 
