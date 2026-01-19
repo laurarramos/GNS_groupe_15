@@ -8,8 +8,7 @@
         "providers":["Y"],
         "customers":[],
         "peers":[],
-        "reflectors":[3,4]
-
+        "reflectors":["X3","X4"]
     },
     "Y":{
         "igp":"OSPF",
@@ -19,7 +18,7 @@
         "providers":[],
         "customers":["X"],
         "peers":[],
-        "reflectors":[3,6]
+        "reflectors":["Y3","Y6"]
         
     }
   },

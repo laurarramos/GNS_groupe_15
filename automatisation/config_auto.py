@@ -17,12 +17,6 @@ OSPF_PROCESS_ID = 1
 DEFAULT_OSPF_AREA = 0
 TELNET_DELAY = 0.3
 
-# Route Reflectors par AS
-RR_BY_AS = {
-    "X": ["X3", "X4"],
-    "Y": ["Y3", "Y6"],
-}
-
 
 with open("intent.json", "r", encoding="utf-8") as f:
     intent = json.load(f)
@@ -390,7 +384,7 @@ def config_BGP(node: Node, router_name: str, neigh):
     # iBGP: Route Reflectors (plus de full-mesh)
     ibgp_peers = []
 
-    rr_names = RR_BY_AS.get(as_r, [])
+    rr_names = intent["AS"][as_r].get("reflectors", [])
     rr_loopbacks = []
 
     for rr in rr_names:
