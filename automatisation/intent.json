@@ -58,16 +58,17 @@
     { "routeur_a": "X6", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y1", "interface_b": "GigabitEthernet1/0", "link_id": 0, "transit": true },
     { "routeur_a": "X7", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y2", "interface_b": "GigabitEthernet1/0", "link_id": 1, "transit": true },
 
-    { "routeur_a": "Y1", "interface_a": "GigabitEthernet2/0", "routeur_b": "Y3", "interface_b": "GigabitEthernet1/0", "link_id": 0 },
-    { "routeur_a": "Y1", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y4", "interface_b": "GigabitEthernet2/0", "link_id": 1 },
-    { "routeur_a": "Y2", "interface_a": "GigabitEthernet2/0", "routeur_b": "Y3", "interface_b": "GigabitEthernet2/0", "link_id": 2 },
-    { "routeur_a": "Y2", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y4", "interface_b": "GigabitEthernet1/0", "link_id": 3 },
-    { "routeur_a": "Y3", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y4", "interface_b": "GigabitEthernet3/0", "link_id": 4 },
-    { "routeur_a": "Y3", "interface_a": "FastEthernet0/0", "routeur_b": "Y5", "interface_b": "GigabitEthernet1/0", "link_id": 5 },
-    { "routeur_a": "Y4", "interface_a": "FastEthernet0/0", "routeur_b": "Y6", "interface_b": "GigabitEthernet1/0", "link_id": 6 },
-    { "routeur_a": "Y5", "interface_a": "GigabitEthernet2/0", "routeur_b": "Y6", "interface_b": "GigabitEthernet2/0", "link_id": 7 },
-    { "routeur_a": "Y5", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y7", "interface_b": "GigabitEthernet2/0", "link_id": 8 },
-    { "routeur_a": "Y6", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y7", "interface_b": "GigabitEthernet1/0", "link_id": 9 }
+    { "routeur_a": "Y1", "interface_a": "GigabitEthernet2/0", "routeur_b": "Y3", "interface_b": "GigabitEthernet1/0", "link_id": 0, "ospf_cost": 10 },
+    { "routeur_a": "Y1", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y4", "interface_b": "GigabitEthernet2/0", "link_id": 1, "ospf_cost": 20 },
+    { "routeur_a": "Y2", "interface_a": "GigabitEthernet2/0", "routeur_b": "Y3", "interface_b": "GigabitEthernet2/0", "link_id": 2, "ospf_cost": 50 },
+    { "routeur_a": "Y2", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y4", "interface_b": "GigabitEthernet1/0", "link_id": 3, "ospf_cost": 20 },
+    { "routeur_a": "Y3", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y4", "interface_b": "GigabitEthernet3/0", "link_id": 4, "ospf_cost": 30 },
+    { "routeur_a": "Y3", "interface_a": "FastEthernet0/0", "routeur_b": "Y5", "interface_b": "GigabitEthernet1/0", "link_id": 5, "ospf_cost": 50 },
+    { "routeur_a": "Y4", "interface_a": "FastEthernet0/0", "routeur_b": "Y6", "interface_b": "GigabitEthernet1/0", "link_id": 6, "ospf_cost": 50 },
+    { "routeur_a": "Y5", "interface_a": "GigabitEthernet2/0", "routeur_b": "Y6", "interface_b": "GigabitEthernet2/0", "link_id": 7, "ospf_cost": 20 },
+    { "routeur_a": "Y5", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y7", "interface_b": "GigabitEthernet2/0", "link_id": 8, "ospf_cost": 10 },
+    { "routeur_a": "Y6", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y7", "interface_b": "GigabitEthernet1/0", "link_id": 9, "ospf_cost": 10 }
+
   ],
 
   "addressing": {},
