@@ -622,12 +622,12 @@ def main():
         node = Node(project_id=project.project_id, name=router_name, connector=server)
         node.get()
 
+        ensure_node_started(node, wait_s=6)
+
         tn = telnetlib.Telnet(node.console_host, node.console)
         send(tn, "no")
         send(tn, "")
         tn.close()
-
-        ensure_node_started(node, wait_s=2)
 
         as_routeur = router_info["as"]
         protocole = intent["AS"][as_routeur]["igp"]
@@ -642,6 +642,8 @@ def main():
 
         # Communautés après BGP
         config_communities(node, router_name, neigh)
+
+        print(f"Configuration routeur {router_name} : terminée.")
 
     print("Configuration terminée.")
 
