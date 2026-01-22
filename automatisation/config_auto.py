@@ -17,7 +17,7 @@ OSPF_PROCESS_ID = 1
 DEFAULT_OSPF_AREA = 0
 TELNET_DELAY = 0.3
 INTENT_NAME = "intent.json"
-PROJECT_NAME = "strcture_vide"
+PROJECT_NAME = "structure_vide"
 
 
 with open(INTENT_NAME, "r", encoding="utf-8") as f:
