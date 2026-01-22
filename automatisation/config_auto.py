@@ -247,7 +247,6 @@ def config_RIP(node: Node, router_name: str, as_routeur: str):
     send(tn, "", delay=1) #au cas où
     tn.close()
 
-
 def config_OSPF(node: Node, router_name: str, as_routeur: str, process_id: int = OSPF_PROCESS_ID, area: int = DEFAULT_OSPF_AREA):
     """
     Configure OSPFv3 et les interfaces IPv6 d’un routeur.
@@ -623,6 +622,8 @@ def main():
         node.get()
 
         ensure_node_started(node, wait_s=6)
+
+        print(f"Début configuration routeur {router_name}...")
 
         tn = telnetlib.Telnet(node.console_host, node.console)
         send(tn, "no")
