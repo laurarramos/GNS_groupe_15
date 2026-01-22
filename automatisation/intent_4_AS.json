@@ -1,0 +1,111 @@
+{
+  "AS": {
+    "X": {
+      "igp": "RIP",
+      "nom_process": "ASX",
+      "asnumber": "65001",
+      "network": "2001:DB8:10::/48",
+      "providers": ["Y", "W"],
+      "customers": [],
+      "peers": [],
+      "reflectors": ["X3", "X4"]
+    },
+    "Y": {
+      "igp": "OSPF",
+      "nom_process": "ASY",
+      "asnumber": "65002",
+      "network": "2001:DB8:20::/48",
+      "providers": ["Z"],
+      "customers": ["X"],
+      "peers": [],
+      "reflectors": ["Y3", "Y4"]
+    },
+    "Z": {
+      "igp": "OSPF",
+      "nom_process": "ASZ",
+      "asnumber": "65003",
+      "network": "2001:DB8:30::/48",
+      "providers": ["W"],
+      "customers": ["Y"],
+      "peers": [],
+      "reflectors": ["Z3", "Z4"]
+    },
+    "W": {
+      "igp": "RIP",
+      "nom_process": "ASW",
+      "asnumber": "65004",
+      "network": "2001:DB8:40::/48",
+      "providers": ["X"],
+      "customers": ["Z"],
+      "peers": [],
+      "reflectors": ["W3", "W4"]
+    }
+  },
+
+  "transit": {
+    "network": "2001:db8:100::/48"
+  },
+
+  "routeurs": {
+    "X1": { "as": "X", "loopback": "2001:db8:10:ffff::1/128", "routeurID": "1.1.1.1", "index": 1 },
+    "X2": { "as": "X", "loopback": "2001:db8:10:ffff::2/128", "routeurID": "2.2.2.2", "index": 2 },
+    "X3": { "as": "X", "loopback": "2001:db8:10:ffff::3/128", "routeurID": "3.3.3.3", "index": 3 },
+    "X4": { "as": "X", "loopback": "2001:db8:10:ffff::4/128", "routeurID": "4.4.4.4", "index": 4 },
+    "X5": { "as": "X", "loopback": "2001:db8:10:ffff::5/128", "routeurID": "5.5.5.5", "index": 5 },
+
+    "Y1": { "as": "Y", "loopback": "2001:db8:20:ffff::1/128", "routeurID": "6.6.6.6", "index": 1 },
+    "Y2": { "as": "Y", "loopback": "2001:db8:20:ffff::2/128", "routeurID": "7.7.7.7", "index": 2 },
+    "Y3": { "as": "Y", "loopback": "2001:db8:20:ffff::3/128", "routeurID": "8.8.8.8", "index": 3 },
+    "Y4": { "as": "Y", "loopback": "2001:db8:20:ffff::4/128", "routeurID": "9.9.9.9", "index": 4 },
+    "Y5": { "as": "Y", "loopback": "2001:db8:20:ffff::5/128", "routeurID": "10.10.10.10", "index": 5 },
+
+    "Z1": { "as": "Z", "loopback": "2001:db8:30:ffff::1/128", "routeurID": "11.11.11.11", "index": 1 },
+    "Z2": { "as": "Z", "loopback": "2001:db8:30:ffff::2/128", "routeurID": "12.12.12.12", "index": 2 },
+    "Z3": { "as": "Z", "loopback": "2001:db8:30:ffff::3/128", "routeurID": "13.13.13.13", "index": 3 },
+    "Z4": { "as": "Z", "loopback": "2001:db8:30:ffff::4/128", "routeurID": "14.14.14.14", "index": 4 },
+    "Z5": { "as": "Z", "loopback": "2001:db8:30:ffff::5/128", "routeurID": "15.15.15.15", "index": 5 },
+
+    "W1": { "as": "W", "loopback": "2001:db8:40:ffff::1/128", "routeurID": "16.16.16.16", "index": 1 },
+    "W2": { "as": "W", "loopback": "2001:db8:40:ffff::2/128", "routeurID": "17.17.17.17", "index": 2 },
+    "W3": { "as": "W", "loopback": "2001:db8:40:ffff::3/128", "routeurID": "18.18.18.18", "index": 3 },
+    "W4": { "as": "W", "loopback": "2001:db8:40:ffff::4/128", "routeurID": "19.19.19.19", "index": 4 },
+    "W5": { "as": "W", "loopback": "2001:db8:40:ffff::5/128", "routeurID": "20.20.20.20", "index": 5 }
+  },
+
+
+  "links": [
+    { "routeur_a": "X1", "interface_a": "GigabitEthernet1/0", "routeur_b": "X3", "interface_b": "GigabitEthernet1/0", "link_id": 0 },
+    { "routeur_a": "X2", "interface_a": "GigabitEthernet1/0", "routeur_b": "X3", "interface_b": "GigabitEthernet2/0", "link_id": 1 },
+    { "routeur_a": "X2", "interface_a": "GigabitEthernet2/0", "routeur_b": "X4", "interface_b": "GigabitEthernet1/0", "link_id": 2 },
+    { "routeur_a": "X3", "interface_a": "GigabitEthernet3/0", "routeur_b": "X4", "interface_b": "GigabitEthernet2/0", "link_id": 3 },
+    { "routeur_a": "X3", "interface_a": "FastEthernet0/0", "routeur_b": "X5", "interface_b": "GigabitEthernet1/0", "link_id": 4 },
+    { "routeur_a": "X4", "interface_a": "GigabitEthernet3/0", "routeur_b": "X5", "interface_b": "GigabitEthernet2/0", "link_id": 5 },
+
+    { "routeur_a": "Y1", "interface_a": "GigabitEthernet1/0", "routeur_b": "Y3", "interface_b": "GigabitEthernet1/0", "link_id": 6, "ospf_cost": 10 },
+    { "routeur_a": "Y2", "interface_a": "GigabitEthernet1/0", "routeur_b": "Y3", "interface_b": "GigabitEthernet2/0", "link_id": 7, "ospf_cost": 50 },
+    { "routeur_a": "Y2", "interface_a": "GigabitEthernet2/0", "routeur_b": "Y4", "interface_b": "GigabitEthernet1/0", "link_id": 8, "ospf_cost": 20 },
+    { "routeur_a": "Y3", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y4", "interface_b": "GigabitEthernet2/0", "link_id": 9, "ospf_cost": 30 },
+    { "routeur_a": "Y3", "interface_a": "FastEthernet0/0", "routeur_b": "Y5", "interface_b": "GigabitEthernet1/0", "link_id": 10, "ospf_cost": 90 },
+    { "routeur_a": "Y4", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y5", "interface_b": "GigabitEthernet2/0", "link_id": 11, "ospf_cost": 20 },
+
+    { "routeur_a": "Z1", "interface_a": "GigabitEthernet1/0", "routeur_b": "Z3", "interface_b": "GigabitEthernet1/0", "link_id": 12, "ospf_cost": 10 },
+    { "routeur_a": "Z2", "interface_a": "GigabitEthernet1/0", "routeur_b": "Z3", "interface_b": "GigabitEthernet2/0", "link_id": 13, "ospf_cost": 50 },
+    { "routeur_a": "Z2", "interface_a": "GigabitEthernet2/0", "routeur_b": "Z4", "interface_b": "GigabitEthernet1/0", "link_id": 14, "ospf_cost": 20 },
+    { "routeur_a": "Z3", "interface_a": "GigabitEthernet3/0", "routeur_b": "Z4", "interface_b": "GigabitEthernet2/0", "link_id": 15, "ospf_cost": 30 },
+    { "routeur_a": "Z3", "interface_a": "FastEthernet0/0", "routeur_b": "Z5", "interface_b": "GigabitEthernet1/0", "link_id": 16, "ospf_cost": 90 },
+    { "routeur_a": "Z4", "interface_a": "GigabitEthernet3/0", "routeur_b": "Z5", "interface_b": "GigabitEthernet2/0", "link_id": 17, "ospf_cost": 20 },
+
+    { "routeur_a": "W1", "interface_a": "GigabitEthernet1/0", "routeur_b": "W3", "interface_b": "GigabitEthernet1/0", "link_id": 18 },
+    { "routeur_a": "W2", "interface_a": "GigabitEthernet1/0", "routeur_b": "W3", "interface_b": "GigabitEthernet2/0", "link_id": 19 },
+    { "routeur_a": "W2", "interface_a": "GigabitEthernet2/0", "routeur_b": "W4", "interface_b": "GigabitEthernet1/0", "link_id": 20 },
+    { "routeur_a": "W3", "interface_a": "GigabitEthernet3/0", "routeur_b": "W4", "interface_b": "GigabitEthernet2/0", "link_id": 21 },
+    { "routeur_a": "W3", "interface_a": "FastEthernet0/0", "routeur_b": "W5", "interface_b": "GigabitEthernet1/0", "link_id": 22 },
+    { "routeur_a": "W4", "interface_a": "GigabitEthernet3/0", "routeur_b": "W5", "interface_b": "GigabitEthernet2/0", "link_id": 23 },
+
+    { "routeur_a": "X5", "interface_a": "GigabitEthernet3/0", "routeur_b": "Y5", "interface_b": "GigabitEthernet3/0", "link_id": 100, "transit": true },
+    { "routeur_a": "Y5", "interface_a": "FastEthernet0/0", "routeur_b": "Z5", "interface_b": "FastEthernet0/0", "link_id": 101, "transit": true },
+    { "routeur_a": "Z5", "interface_a": "GigabitEthernet3/0", "routeur_b": "W5", "interface_b": "GigabitEthernet3/0", "link_id": 102, "transit": true },
+    { "routeur_a": "W5", "interface_a": "FastEthernet0/0", "routeur_b": "X5", "interface_b": "FastEthernet0/0", "link_id": 103, "transit": true }
+
+  ]
+}

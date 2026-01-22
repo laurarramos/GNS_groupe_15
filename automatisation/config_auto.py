@@ -16,13 +16,15 @@ GNS3_URL = "http://127.0.0.1:3080"
 OSPF_PROCESS_ID = 1
 DEFAULT_OSPF_AREA = 0
 TELNET_DELAY = 0.3
+INTENT_NAME = "intent.json"
+PROJECT_NAME = "strcture_vide"
 
 
-with open("intent.json", "r", encoding="utf-8") as f:
+with open(INTENT_NAME, "r", encoding="utf-8") as f:
     intent = json.load(f)
 
 server = Gns3Connector(url=GNS3_URL)
-project = Project(name="structure_vide", connector=server)
+project = Project(name=PROJECT_NAME, connector=server)
 project.get()
 project.open()
 project.get_nodes()
@@ -453,10 +455,12 @@ def config_BGP(node: Node, router_name: str, neigh):
     net48 = intent["AS"][as_r]["network"]
 
     if border and igp == "RIP":
+        send(tn, "address-family ipv6")
         send(tn, f"redistribute rip {intent['AS'][as_r]['nom_process']}")
         send(tn, f"aggregate-address {net48} summary-only")
 
     if border and igp == "OSPF":
+        send(tn, "address-family ipv6")
         send(tn, f"redistribute ospf {OSPF_PROCESS_ID}")
         send(tn, f"aggregate-address {net48} summary-only")
 
