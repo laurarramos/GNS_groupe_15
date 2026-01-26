@@ -331,151 +331,99 @@ def config_OSPF(node: Node, router_name: str, as_routeur: str, process_id: int =
 # ---------------------- BGP config ----------------------
 
 def config_BGP(node: Node, router_name: str, neigh):
-    """
-    Configure iBGP et eBGP IPv6 pour un routeur.
-    Args:
-        node (Node): Node GNS3.
-        router_name (str): Nom du routeur.
-        neigh (dict): Voisins du routeur.
-    Returns:
-        None
-    """
     as_r = intent["routeurs"][router_name]["as"]
     border = is_border(router_name, intent, neigh)
+    asn = int(intent["AS"][as_r]["asnumber"])
+    rid = intent["routeurs"][router_name]["routeurID"]
+    igp = intent["AS"][as_r]["igp"]
+    net48 = intent["AS"][as_r]["network"]
 
     tn = telnetlib.Telnet(node.console_host, node.console)
     time.sleep(1)
-    send(tn, "")
     send(tn, "enable")
     send(tn, "conf t")
+    
+    # --- 1. POLITIQUES DE MARQUAGE (Mode Global) ---
+    # Pour la redistribution (besoin de additive)
+    send(tn, "route-map TAG-MON-AS permit 10")
+    send(tn, f"set community {asn}:100 additive")
+    send(tn, "exit")
+    
+    # Spécifique pour l'agrégation (SANS additive pour éviter l'erreur IOS)
+    send(tn, "route-map AGGREGATE-POLICY permit 10")
+    send(tn, f"set community {asn}:100")
+    send(tn, "exit")
 
-    asn = int(intent["AS"][as_r]["asnumber"])
-    rid = intent["routeurs"][router_name]["routeurID"]
+    # --- 2. CONFIGURATION DU PROCESSUS BGP ---
     send(tn, f"router bgp {asn}")
     send(tn, f"bgp router-id {rid}")
-    send(tn, "bgp log-neighbor-changes")
 
-    # eBGP: voisins inter-AS (sur IP de lien)
+    # eBGP Neighbors
     ebgp_peers = []
     if border:
         for v in neigh[router_name]:
             as_v = intent["routeurs"][v]["as"]
-            if as_v == as_r:
-                continue
-
-            link=get_link(router_name, v, intent["links"])
-            if not link:
-                continue
-
-            if not link.get("transit", False):
-                continue
-
+            if as_v == as_r: continue
+            link = get_link(router_name, v, intent["links"])
+            if not link or not link.get("transit", False): continue
+            
             transit_48 = intent["transit"]["network"]
             prefix = prefix64_from_48(transit_48, link["link_id"])
-
-            if router_name == link["routeur_a"]:
-                peer_ip = iface_addr(prefix, 2).split("/")[0]
-            else:
-                peer_ip = iface_addr(prefix, 1).split("/")[0]
-
-            peer_asn = int(intent["AS"][as_v]["asnumber"])
-            send(tn, f"neighbor {peer_ip} remote-as {peer_asn}")
+            peer_ip = iface_addr(prefix, 2 if router_name == link["routeur_a"] else 1).split("/")[0]
+            send(tn, f"neighbor {peer_ip} remote-as {intent['AS'][as_v]['asnumber']}")
             ebgp_peers.append(peer_ip)
 
-    # iBGP: Route Reflectors (plus de full-mesh)
+    # iBGP Neighbors (Route Reflectors)
     ibgp_peers = []
-
     rr_names = intent["AS"][as_r].get("reflectors", [])
-    rr_loopbacks = []
-
-    for rr in rr_names:
-        idx_rr = intent["routeurs"][rr]["index"]
-        rr_lo = loopback_from_as48(intent["AS"][as_r]["network"], idx_rr).split("/")[0]
-        rr_loopbacks.append(rr_lo)
-
-    # cas router est RR
-    if router_name in rr_names:
-        for rr, rr_lo in zip(rr_names, rr_loopbacks): # zip(..) pour parcourir 2 listes en même temps, élément par élément
-            if rr == router_name:
-                continue
-            send(tn, f"neighbor {rr_lo} remote-as {asn}")
-            send(tn, f"neighbor {rr_lo} update-source Loopback0")
-            ibgp_peers.append(rr_lo)
-
-        for r2, info2 in intent["routeurs"].items():
-            if info2["as"] != as_r:
-                continue
-            if r2 in rr_names:
-                continue
-
+    for r2, info2 in intent["routeurs"].items():
+        if info2["as"] == as_r and r2 != router_name:
             idx2 = info2["index"]
             lo2 = loopback_from_as48(intent["AS"][as_r]["network"], idx2).split("/")[0]
-            send(tn, f"neighbor {lo2} remote-as {asn}")
-            send(tn, f"neighbor {lo2} update-source Loopback0")
-            ibgp_peers.append(lo2)
+            # On ne monte de sessions qu'avec ou depuis les RR
+            if router_name in rr_names or r2 in rr_names:
+                send(tn, f"neighbor {lo2} remote-as {asn}")
+                send(tn, f"neighbor {lo2} update-source Loopback0")
+                ibgp_peers.append(lo2)
 
-    # cas router n'est pas RR
-    else:
-        for rr_lo in rr_loopbacks:
-            send(tn, f"neighbor {rr_lo} remote-as {asn}")
-            send(tn, f"neighbor {rr_lo} update-source Loopback0")
-            ibgp_peers.append(rr_lo)
-    
-
-    # AF IPv6
+    # --- 3. ADDRESS-FAMILY IPV6 ---
     send(tn, "address-family ipv6")
-
     for p in ebgp_peers:
         send(tn, f"neighbor {p} activate")
     for p in ibgp_peers:
         send(tn, f"neighbor {p} activate")
+        if border: send(tn, f"neighbor {p} next-hop-self")
+        # Si je suis RR, mes voisins non-RR sont mes clients
+        is_p_rr = any(p in loopback_from_as48(net48, intent["routeurs"][rr]["index"]) for rr in rr_names)
+        if router_name in rr_names and not is_p_rr:
+            send(tn, f"neighbor {p} route-reflector-client")
+    
+    # --- 4. REDISTRIBUTION & AGRÉGATION CORRIGÉES ---
+    if border:
+        if igp == "RIP":
+            send(tn, f"redistribute rip {intent['AS'][as_r]['nom_process']} route-map TAG-MON-AS")
+        elif igp == "OSPF":
+            send(tn, f"redistribute ospf {OSPF_PROCESS_ID} route-map TAG-MON-AS")
+        
+        # Utilisation de la policy sans "additive" ici
+        send(tn, f"aggregate-address {net48} summary-only route-map AGGREGATE-POLICY")
 
-        if router_name in rr_names:
-            send(tn, f"neighbor {p} next-hop-self")
-
-    send(tn, "exit")
-
-    # RR config
-    if router_name in rr_names:
-        send(tn, "address-family ipv6")
-        for r2, info2 in intent["routeurs"].items():
-            if info2["as"] != as_r:
-                continue
-            if r2 in rr_names: # faut pas mettre un RR-client à soi-même ni aux autres RRs
-                continue
-
-            idx2 = info2["index"]
-            lo2 = loopback_from_as48(intent["AS"][as_r]["network"], idx2).split("/")[0]
-            send(tn, f"neighbor {lo2} activate")
-            send(tn, f"neighbor {lo2} route-reflector-client")         
-
-    # policies (redistribute + aggregate) uniquement sur bordure
-    igp = intent["AS"][as_r]["igp"]
-    net48 = intent["AS"][as_r]["network"]
-
-    if border and igp == "RIP":
-        send(tn, "address-family ipv6")
-        send(tn, f"redistribute rip {intent['AS'][as_r]['nom_process']}")
-        send(tn, f"aggregate-address {net48} summary-only")
-
-    if border and igp == "OSPF":
-        send(tn, "address-family ipv6")
-        send(tn, f"redistribute ospf {OSPF_PROCESS_ID}")
-        send(tn, f"aggregate-address {net48} summary-only")
-
+    send(tn, "clear bgp ipv6 unicast * soft")
     send(tn, "end")
-    send(tn, "write memory", delay=0.5)
-
-    # Retour BGP -> RIP dans AS X (seulement bordure)
-    if border and igp == "RIP":
+    
+    # --- 5. REDISTRIBUTION RETOUR (IGP) ---
+    if border:
         send(tn, "conf t")
-        send(tn, f"ipv6 router rip {intent['AS'][as_r]['nom_process']}")
-        send(tn, f"redistribute bgp {intent['AS'][as_r]['asnumber']} metric 1")
+        if igp == "RIP":
+            send(tn, f"ipv6 router rip {intent['AS'][as_r]['nom_process']}")
+            send(tn, f"redistribute bgp {asn} metric 1")
+        elif igp == "OSPF":
+            send(tn, f"ipv6 router ospf {OSPF_PROCESS_ID}")
+            send(tn, f"redistribute bgp {asn} include-connected")
         send(tn, "end")
-        send(tn, "write memory", delay=0.5)
 
+    send(tn, "write memory", delay=0.5)
     tn.close()
-
 
 # ---------------------- Communautés ----------------------
 
