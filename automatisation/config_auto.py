@@ -16,8 +16,8 @@ GNS3_URL = "http://127.0.0.1:3080"
 OSPF_PROCESS_ID = 1
 DEFAULT_OSPF_AREA = 0
 TELNET_DELAY = 0.3
-INTENT_NAME = "intent.json"
-PROJECT_NAME = "structure_vide"
+INTENT_NAME = "intent_4_AS.json"
+PROJECT_NAME = "structure_vide_4_AS"
 
 
 with open(INTENT_NAME, "r", encoding="utf-8") as f:

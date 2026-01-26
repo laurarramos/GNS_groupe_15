@@ -5,9 +5,9 @@
       "nom_process": "ASX",
       "asnumber": "65001",
       "network": "2001:DB8:10::/48",
-      "providers": ["Y", "W"],
+      "providers": ["Y"],
       "customers": [],
-      "peers": [],
+      "peers": ["W"],
       "reflectors": ["X3", "X4"]
     },
     "Y": {
@@ -35,9 +35,9 @@
       "nom_process": "ASW",
       "asnumber": "65004",
       "network": "2001:DB8:40::/48",
-      "providers": ["X"],
+      "providers": [],
       "customers": ["Z"],
-      "peers": [],
+      "peers": ["X"],
       "reflectors": ["W3", "W4"]
     }
   },
