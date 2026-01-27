@@ -39,5 +39,5 @@ Pour protéger la table de routage mondiale, nous agrégons les préfixes `/64` 
 ---
 
 ## Installation & Utilisation
-1. Lancer **GNS3** et démarrer les nodes.
+1. Lancer la structure vide dans **GNS3** et démarrer les nodes.
 2. Exécuter le script : `python main.py`.
